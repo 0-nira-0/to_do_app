@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { RegisterUserDto } from './dto/post-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
@@ -13,7 +13,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new Error('User already exists');
+      throw new HttpException('User already exists', 444);
     }
 
     const hashed = await bcrypt.hash(dto.password, 10);
@@ -24,7 +24,21 @@ export class AuthService {
         password: hashed,
       },
     });
-
+    //give jwt token
+    //after jwt token, proxy to app endpoint
     return { id: user.id, email: user.email };
+  }
+
+  async login(dto: RegisterUserDto) {
+    const existing = await this.db.user.findUnique({
+      where: { email: dto.email },
+      //check password, by comparing hashed password with bcrypt
+    });
+
+    if (existing) {
+      // give jwt token
+      //after jwt token, proxy to app endpoint
+    }
+    throw new HttpException('Invalid credentials', 401);
   }
 }

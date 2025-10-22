@@ -17,9 +17,6 @@ export class DatabaseService extends PrismaClient {
     await this.task.deleteMany();
   }
   
-  async enableShutdownHooks(app: INestApplication) {
-    this.$on('beforeExit', async () => {
-      await app.close();
-    });
+
 }
-}
+

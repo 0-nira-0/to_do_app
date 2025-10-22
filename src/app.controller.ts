@@ -5,10 +5,12 @@ import { RegisterUserDto } from './auth/dto/post-auth.dto';
 @Controller('app')
 export class AppController {
   constructor(private readonly appService: AppService) {}
-
-  @Post('create')
-  create(@Body() dto: RegisterUserDto) {
-    return dto;
-  }
+  //create tasks and assign to user
+  //pagination for tasks
+  //sort tasks by title, date, status
+  //create crud endpoints for tasks
+  //all logic in app service
+  //protect all endpoints with jwt auth guard
+  //jeszcze nie pridumalem co tutaj moze byc
 
 }
