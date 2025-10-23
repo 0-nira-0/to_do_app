@@ -11,5 +11,9 @@ export class AuthController {
     console.log('register called')
     return this.authService.register(dto);
   }
-}
 
+  @Post('login')
+  async login(@Body() dto: RegisterUserDto) {
+    return this.authService.login(dto);
+  }
+}
