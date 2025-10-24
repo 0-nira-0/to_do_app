@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
 import * as crypto from 'crypto';
 import { SessionService } from 'src/session/session.service';
-import { Response } from 'express';
+
 
 
 @Injectable()
@@ -69,6 +69,7 @@ export class AuthService {
   
   return { id: existing.id, email: existing.email, token };
 }
+
 
 
   async logout(tokenDto: TokenDto) {

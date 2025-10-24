@@ -7,7 +7,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-
+    console.log()
 
     app.useGlobalPipes( // with this i don't need to add ValidationPipe in each controller separately
     new ValidationPipe({ // validation pipe to validate incoming requests for all controllers

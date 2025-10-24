@@ -1,11 +1,24 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RegisterUserDto } from './auth/dto/post-auth.dto';
-
+import { CreateTaskDto } from './dto_task/tasks.dto';
+import { Res, Req } from '@nestjs/common';
+import type { Response } from 'express';
+import { SessionService } from './session/session.service';
 @Controller('app')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService,
+    private readonly sessionService: SessionService
+  ) {}
 
+  @Post('tasks')
+  async createTask(@Body() dto: CreateTaskDto, @Req() req) {
+    const token = req.cookies['session_token'];
+    console.log(token)
+    const session = await this.sessionService.getSessionByToken(token)
+    if (!session) throw new HttpException('invalid token', 401)
+    return this.appService.createTask(dto, session.userId);
+  }
+}
 //  @Post('tasks')
 //   async createTask(@Body() dto: //dto for task creation) {
 //     //logic to create task
@@ -26,4 +39,4 @@ export class AppController {
 //   //jeszcze nie pridumalem co tutaj moze byc
 
 // 
-}
+

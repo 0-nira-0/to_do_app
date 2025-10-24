@@ -1,4 +1,5 @@
 import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { User } from 'generated/prisma';
 
 export class RegisterUserDto {
   @MaxLength(64, { message: 'max 64 symbols' })
@@ -9,6 +10,7 @@ export class RegisterUserDto {
   @IsString({ message: 'passwrod must be a string' })
   @MinLength(6, { message: 'min 6 symdobls' })
   password: string;
+
 }
 
 export class LoginUserDto {

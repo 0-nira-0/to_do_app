@@ -24,7 +24,8 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Body() tokenDto: TokenDto, @Req() req, @Res({ passthrough: true }) res: Response) {
-    
+     console.log('Before clear:', req.cookies);
+
     res.clearCookie('session_token', {
       httpOnly: true,
       secure: true,
