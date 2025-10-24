@@ -5,9 +5,10 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
+import { SessionModule } from './session/session.module';
 
 @Module({
-  imports: [UserModule, AuthModule, DatabaseModule],
+  imports: [UserModule, AuthModule, DatabaseModule, SessionModule],
   controllers: [AppController],
   providers: [AppService],
 })

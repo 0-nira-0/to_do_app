@@ -1,12 +1,18 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { RegisterUserDto } from './dto/post-auth.dto';
+import { RegisterUserDto, LoginUserDto, TokenDto } from './dto/post-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
-import * as jwt from '@nestjs/jwt';
+import * as crypto from 'crypto';
+import { SessionService } from 'src/session/session.service';
+
+
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly sessionService: SessionService
+  ) {}
 
   async register(dto: RegisterUserDto) {
     const existing = await this.db.user.findUnique({
@@ -26,12 +32,18 @@ export class AuthService {
       },
     });
     
-    //give jwt token
-    //after jwt token, proxy to app endpoint
-    return { id: user.id, email: user.email };
+  const token = crypto.randomBytes(32).toString('hex');
+
+  await this.sessionService.createSession(
+    user.id,
+    token,
+    new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
+  );
+  
+  return { id: user.id, email: user.email, token };
   }
 
-  async login(dto: RegisterUserDto) {
+  async login(dto: LoginUserDto) {
     
     const existing = await this.db.user.findUnique({
       where: { email: dto.email },
@@ -47,6 +59,22 @@ export class AuthService {
     throw new HttpException('Invalid credentials', 401);
   }
   
-  return { id: existing.id, email: existing.email };
+  const token = crypto.randomBytes(32).toString('hex');
+
+  await this.sessionService.createSession(
+    existing.id,
+    token, //kogda my delaem sesiyu, my hashyruem token czerez hashToken v session.service
+    new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
+    );
+  
+  return { id: existing.id, email: existing.email, token };
+}
+
+
+  async logout(tokenDto: TokenDto) {
+    const token = tokenDto.token;
+    const deleted = await this.sessionService.deleteSession(token);
+    if (!deleted) throw new HttpException('Session not found', 404);
+    return { message: 'Logged out successfully' };
 }
 }
