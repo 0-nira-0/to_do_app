@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
 import * as crypto from 'crypto';
 import { SessionService } from 'src/session/session.service';
-
+import { Response } from 'express';
 
 
 @Injectable()

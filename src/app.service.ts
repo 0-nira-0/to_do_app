@@ -4,12 +4,12 @@ import { DatabaseService } from './database/database.service';
 export class AppService {
   constructor(private readonly db: DatabaseService ) {}
 
-  // async createTask(//dto for task creation) {
+  // async createTask(dto:) {
   //   //logic to create task
   //   return this.db.task.create({
   //     data: {
   //       //task data from dto
   //     },
   //   });
-  }
-
+  // }
+}
