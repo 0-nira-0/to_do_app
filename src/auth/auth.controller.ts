@@ -45,9 +45,15 @@ export class AuthController {
 
 
   @Get('me')
-  async profile(@Req() req) {
+  async profile(@Req() req,@Res({ passthrough: true }) res: Response ) {
     const token = req.cookies['session_token'];
     if (!token) throw new HttpException('Not authorized', 401);
+    res.cookie('session_token', token, {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 30, 
+      secure: true,       
+      sameSite: 'strict', 
+    });
     return await this.authService.profile(token);
   }
 }
