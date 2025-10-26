@@ -4,7 +4,7 @@ import { CreateTaskDto } from './dto_task/tasks.dto';
 import { Res, Req } from '@nestjs/common';
 import type { Response } from 'express';
 import { SessionService } from './session/session.service';
-@Controller('app')
+@Controller('apps')
 export class AppController {
   constructor(private readonly appService: AppService,
     private readonly sessionService: SessionService
@@ -16,7 +16,7 @@ export class AppController {
     console.log(token)
     const session = await this.sessionService.getSessionByToken(token)
     if (!session) throw new HttpException('invalid token', 401)
-    return this.appService.createTask(dto, session.userId);
+    return  this.appService.createTask(dto, session.userId);
   }
 }
 //  @Post('tasks')

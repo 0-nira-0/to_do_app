@@ -51,7 +51,7 @@ export class AuthService {
 
  
   if (!existing) {
-    throw new HttpException('User not found', 404);
+    throw new HttpException('Invalid credentials', 401);
   }
 
   const isValid = await bcrypt.compare(dto.password, existing.password);
@@ -70,7 +70,14 @@ export class AuthService {
   return { id: existing.id, email: existing.email, token };
 }
 
+  async profile(token:string){
+      const session = await this.sessionService.getSessionByToken(token)
+      if (!session) throw new HttpException('Session not found', 404);
+      return this.db.user.findUnique({
+      where: { id: session.userId },
+    });
 
+  }
 
   async logout(tokenDto: TokenDto) {
     const token = tokenDto.token;
