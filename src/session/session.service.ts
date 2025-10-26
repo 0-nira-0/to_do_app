@@ -28,7 +28,7 @@ export class SessionService {
     if (session.expiresAt.getTime() <= Date.now() ){
     throw new HttpException('invalid token', 401) //redirect to login
   }
-   await this.db.session.update({
+  const updatedSession = await this.db.session.update({
       where: {
       tokenHash
      },
@@ -36,7 +36,7 @@ export class SessionService {
      expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
       }
     })
-    return session
+    return updatedSession
   }
 
 async deleteSession(token: string) {
