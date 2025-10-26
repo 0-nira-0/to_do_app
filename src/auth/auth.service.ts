@@ -71,7 +71,7 @@ export class AuthService {
 }
 
   async profile(token:string){
-      const session = await this.sessionService.getSessionByToken(token)
+      const session = await this.sessionService.getSessionByTokenAndUpdate(token)
       if (!session) throw new HttpException('Session not found', 404);
       return this.db.user.findUnique({
       where: { id: session.userId },

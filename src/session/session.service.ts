@@ -18,11 +18,25 @@ export class SessionService {
     });
   }
 
- async getSessionByToken(token: string) {
+ async getSessionByTokenAndUpdate(token: string) {
     const tokenHash = this.hashToken(token);
-    return this.db.session.findUnique({
+    let session =  await this.db.session.findUnique({
       where: { tokenHash },
     });
+    if(!session) throw new HttpException('invalid token', 401)
+
+    if (session.expiresAt.getTime() <= Date.now() ){
+    throw new HttpException('invalid token', 401) //redirect to login
+  }
+   await this.db.session.update({
+      where: {
+      tokenHash
+     },
+      data: {
+     expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
+      }
+    })
+    return session
   }
 
 async deleteSession(token: string) {

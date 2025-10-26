@@ -6,15 +6,16 @@ import type { Response } from 'express';
 import { SessionService } from './session/session.service';
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService,
+  constructor(
+    private readonly appService: AppService,
     private readonly sessionService: SessionService
-  ) {}
+    ) {}
 
   @Post('tasks')
   async createTask(@Body() dto: CreateTaskDto, @Req() req) {
     const token = req.cookies['session_token'];
     console.log(token)
-    const session = await this.sessionService.getSessionByToken(token)
+    const session = await this.sessionService.getSessionByTokenAndUpdate(token)
     if (!session) throw new HttpException('invalid token', 401)
     return  this.appService.createTask(dto, session.userId);
   }

@@ -12,14 +12,19 @@ export class AuthController {
   @Post('register')
   async register(@Body() dto: RegisterUserDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(dto);
-    res.cookie('session_token', result.token, { httpOnly: true });
+    res.cookie('session_token', result.token, { httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 30
+     });
     return { message: 'Registration successful', user: result };
   }
 
   @Post('login')
   async login(@Body() dto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(dto);
-    res.cookie('session_token', result.token, { httpOnly: true });
+    res.cookie('session_token', result.token, { 
+      httpOnly: true,
+       maxAge: 1000 * 60 * 60 * 24 * 30 
+      });
     return { message: 'Login successful', user: result };
   }
 
