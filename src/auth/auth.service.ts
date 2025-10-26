@@ -37,7 +37,7 @@ export class AuthService {
   await this.sessionService.createSession(
     user.id,
     token,
-    new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
+    new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
   );
   
   return { id: user.id, email: user.email, token };
@@ -79,8 +79,7 @@ export class AuthService {
 
   }
 
-  async logout(tokenDto: TokenDto) {
-    const token = tokenDto.token;
+  async logout(token:string) {
     const deleted = await this.sessionService.deleteSession(token);
     if (!deleted) throw new HttpException('Session not found', 404);
     return { message: 'Logged out successfully' };

@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto, TokenDto } from './dto/post-auth.dto';
 import type { Response } from 'express';
 import { Res, Req } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
@@ -23,21 +24,25 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Body() tokenDto: TokenDto, @Req() req, @Res({ passthrough: true }) res: Response) {
-     console.log(req.cookies);
-
+  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
+    console.log(req.cookies);
+    const token = req.cookies['session_token']; 
+    if (!token) throw new HttpException('Not authorized', 401);
     res.clearCookie('session_token', {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
     });
-      
-    return await this.authService.logout(tokenDto);
+
+  return await this.authService.logout(token);
+  
 }
+
 
   @Get('me')
   async profile(@Req() req) {
     const token = req.cookies['session_token'];
+    if (!token) throw new HttpException('Not authorized', 401);
     return await this.authService.profile(token);
   }
 }

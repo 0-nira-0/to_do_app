@@ -4,7 +4,7 @@ import { CreateTaskDto } from './dto_task/tasks.dto';
 import { Res, Req } from '@nestjs/common';
 import type { Response } from 'express';
 import { SessionService } from './session/session.service';
-@Controller('apps')
+@Controller()
 export class AppController {
   constructor(private readonly appService: AppService,
     private readonly sessionService: SessionService
