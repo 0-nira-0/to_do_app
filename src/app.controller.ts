@@ -17,12 +17,7 @@ export class AppController {
     console.log(token)
     const session = await this.sessionService.getSessionByTokenAndUpdate(token)
     if (!session) throw new HttpException('invalid token', 401)
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 30, 
-      secure: true,       
-      sameSite: 'strict', 
-    });
+    this.refreshCookie(res, token)
     return  this.appService.createTask(dto, session.userId);
   }
 
@@ -33,12 +28,7 @@ export class AppController {
     console.log(token)
     const session = await this.sessionService.getSessionByTokenAndUpdate(token)
     if (!session) throw new HttpException('invalid token', 401)
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 30, 
-      secure: true,       
-      sameSite: 'strict', 
-    });
+    this.refreshCookie(res, token)
     return await this.appService.updateTask(dto, id, session.userId,)
   }
 
@@ -47,13 +37,27 @@ export class AppController {
     const token = req.cookies['session_token'];
     const session = await this.sessionService.getSessionByTokenAndUpdate(token)
     if (!session) throw new HttpException('invalid token', 401)
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 30, 
-      secure: true,       
-      sameSite: 'strict', 
-    });
+    this.refreshCookie(res, token)
     return await this.appService.deleteTask(id, session.userId,)
   }
 
+
+  @Get('tasks/:id')
+  async getTask(@Param('id', ParseIntPipe) id:number ,@Req() req, @Res({ passthrough: true }) res: Response){
+    const token = req.cookies['session_token'];
+    const session = await this.sessionService.getSessionByTokenAndUpdate(token)
+    if (!session) throw new HttpException('invalid token', 401)
+    this.refreshCookie(res, token)
+    return await this.appService.getTask(id, session.userId,)
+  }
+
+
+  private refreshCookie(res: Response, token: string) {
+  res.cookie('session_token', token, {
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 30,
+    secure: true,
+    sameSite: 'strict',
+  });
+}
 }

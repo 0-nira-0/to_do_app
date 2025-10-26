@@ -20,14 +20,14 @@ export class AppService {
     },
   });
 
-  return {task}
+  return { message: 'Task created successfully', task: this.createTask };
   }
 
   async updateTask(dto: UpdateTaskDto, id, userId) {
     const task = await this.db.task.findUnique({ where: { id } });
     if(!task) throw new HttpException('task not found', 404)
     if(task.userId !== userId) throw new HttpException('Not authorized', 401)
-    const taskUpdate = await this.db.task.update({
+    const updatedTask = await this.db.task.update({
       where: {
         id
       },
@@ -35,19 +35,26 @@ export class AppService {
         ...dto
       }
     });
-  return {taskUpdate}
+  return { message: 'Task updated successfully', task: updatedTask};
 }
 
   async deleteTask(id , userId){
   const task = await this.db.task.findUnique({ where: { id } });
     if(!task) throw new HttpException('task not found', 404)
     if(task.userId !== userId) throw new HttpException('Not authorized', 401)
-    const taskDelete = await this.db.task.delete({
+    const deletedTask = await this.db.task.delete({
       where: {
         id
       }
     });
-  return {taskDelete}
+  return { message: 'Task deleted successfully', task: deletedTask };
+}
+
+  async getTask(id , userId){
+  const task = await this.db.task.findUnique({ where: { id } });
+    if(!task) throw new HttpException('task not found', 404)
+    if(task.userId !== userId) throw new HttpException('Not authorized', 401)
+  return task
 }
 }
 
