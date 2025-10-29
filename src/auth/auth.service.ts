@@ -1,87 +1,114 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { RegisterUserDto, LoginUserDto, TokenDto } from './dto/post-auth.dto';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { RegisterUserDto, LoginUserDto } from './dto/post-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
 import * as crypto from 'crypto';
 import { SessionService } from 'src/session/session.service';
-
-
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly db: DatabaseService,
-    private readonly sessionService: SessionService
+    private readonly sessionService: SessionService,
   ) {}
 
-  async register(dto: RegisterUserDto) {
-    const existing = await this.db.user.findUnique({
+  private createTokenAndTokenId() {
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenId = crypto.randomBytes(32).toString('hex');
+    return { token, tokenId };
+  }
+
+  async register(dto: RegisterUserDto): Promise<{
+    user: { id: User['id']; email: User['email'] };
+    token: string;
+    tokenId: string;
+  }> {
+    const existingUser = await this.db.user.findUnique({
       where: { email: dto.email },
     });
 
-    if (existing) {
-      throw new HttpException('User already exists', 444);
+    if (existingUser) {
+      throw new ConflictException('User already exists');
     }
 
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const user = await this.db.user.create({
       data: {
         email: dto.email,
-        password: hashed,
+        password: hashedPassword,
       },
     });
-    
-  const token = crypto.randomBytes(32).toString('hex');
 
-  await this.sessionService.createSession(
-    user.id,
-    token,
-    new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
-  );
-  
-  return { id: user.id, email: user.email, token };
+    const { token, tokenId } = this.createTokenAndTokenId();
+    const params = { userId: user.id, token, tokenId };
+
+    await this.sessionService.create(params);
+
+    return { user: { id: user.id, email: user.email }, token, tokenId };
   }
 
-  async login(dto: LoginUserDto) {
-    
+  async login(dto: LoginUserDto): Promise<{
+    user: { id: User['id']; email: User['email'] };
+    token: string;
+    tokenId: string;
+  }> {
     const existing = await this.db.user.findUnique({
       where: { email: dto.email },
     });
 
- 
-  if (!existing) {
-    throw new HttpException('Invalid credentials', 401);
-  }
+    if (!existing) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-  const isValid = await bcrypt.compare(dto.password, existing.password);
-  if (!isValid) {
-    throw new HttpException('Invalid credentials', 401);
-  }
-  
-  const token = crypto.randomBytes(32).toString('hex');
+    const isValid = await bcrypt.compare(dto.password, existing.password);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-  await this.sessionService.createSession(
-    existing.id,
-    token, //kogda my delaem sesiyu, my hashyruem token czerez hashToken v session.service
-    new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
+    const { token, tokenId } = this.createTokenAndTokenId();
+    await this.sessionService.create(
+      {
+        userId: existing.id,
+        token,
+        tokenId,
+      },
+      // existing.id,
+      // token, //kogda my delaem sesiyu, my hashyruem token czerez hashToken v session.service
     );
-  
-  return { id: existing.id, email: existing.email, token };
-}
 
-  async profile(token:string){
-      const session = await this.sessionService.getSessionByTokenAndUpdate(token)
-      if (!session) throw new HttpException('Session not found', 404);
-      return this.db.user.findUnique({
+    return { user: { id: existing.id, email: existing.email }, token, tokenId };
+  }
+
+  async getUserByToken(tokenId: string, token: string) {
+    const session = await this.db.session.findUnique({
+      where: { tokenId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    const checkToken = await bcrypt.compare(token, session.tokenHash);
+    if (!checkToken) throw new UnauthorizedException('Not authorized');
+    const user = await this.db.user.findUnique({
       where: { id: session.userId },
     });
-
+    if (!user) {
+      return null;
+    }
+    return {
+      user: { email: user.email, createdAt: user.createdAt, id: user.id },
+    };
   }
 
-  async logout(token:string) {
-    const deleted = await this.sessionService.deleteSession(token);
-    if (!deleted) throw new HttpException('Session not found', 404);
-    return { message: 'Logged out successfully' };
-}
+  async logout(tokenId: string) {
+    try {
+      await this.sessionService.delete(tokenId);
+    } catch {
+      throw new NotFoundException('Session not found');
+    }
+  }
 }

@@ -1,53 +1,50 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { config } from 'src/config';
 
+type CreateSessionOptions = { userId: number; token: string; tokenId: string };
 @Injectable()
 export class SessionService {
   constructor(private readonly db: DatabaseService) {}
 
-  async createSession(userId: number, token: string, expiresAt: Date) {
-    const tokenHash = this.hashToken(token);
-
+  async create({ token, userId, tokenId }: CreateSessionOptions) {
+    const tokenHash = await bcrypt.hash(token, 10);
     return this.db.session.create({
       data: {
+        tokenId,
         userId,
         tokenHash,
-        expiresAt,
+        expiresAt: new Date(Date.now() + config().session.maxAge),
       },
     });
   }
 
- async getSessionByTokenAndUpdate(token: string) {
-    const tokenHash = this.hashToken(token);
-    let session =  await this.db.session.findUnique({
-      where: { tokenHash },
+  async update(tokenId: string, token: string) {
+    const session = await this.db.session.findUnique({
+      where: { tokenId },
     });
-    if(!session) throw new HttpException('invalid token', 401)
+    if (!session) throw new UnauthorizedException('invalid token');
 
-    if (session.expiresAt.getTime() <= Date.now() ){
-    throw new HttpException('invalid token', 401) //redirect to login
-  }
-  const updatedSession = await this.db.session.update({
+    const tokenCheck = await bcrypt.compare(token, session.tokenHash);
+
+    if (!tokenCheck) throw new UnauthorizedException('Not authorized');
+
+    if (session.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException('invalid token'); //redirect to login
+    }
+    const updatedSession = await this.db.session.update({
       where: {
-      tokenHash
-     },
+        tokenId,
+      },
       data: {
-     expiresAt: new Date(Date.now() + 60 * 60 * 24 * 30* 1000)
-      }
-    })
-    return updatedSession
+        expiresAt: new Date(Date.now() + config().session.maxAge),
+      },
+    });
+    return updatedSession;
   }
 
-async deleteSession(token: string) {
-  const tokenHash = this.hashToken(token);
-  const session = await this.db.session.findUnique({ where: { tokenHash } });
-  if (!session) throw new HttpException('Session not found', 404);
-
-  return this.db.session.delete({ where: { tokenHash } });
-}
-  
-    private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
+  async delete(tokenId: string) {
+    return this.db.session.delete({ where: { tokenId } });
   }
 }

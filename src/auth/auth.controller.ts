@@ -1,59 +1,85 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginUserDto, RegisterUserDto, TokenDto } from './dto/post-auth.dto';
-import type { Response } from 'express';
+import { LoginUserDto, RegisterUserDto } from './dto/post-auth.dto';
+import type { Response, Request } from 'express';
 import { Res, Req } from '@nestjs/common';
-import { HttpException } from '@nestjs/common';
+import { config } from 'src/config';
+
+interface RequestWithCookies extends Request {
+  cookies: Record<string, string>;
+}
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private checkCookie(req: RequestWithCookies) {
+    const cookie = req.cookies[config().session.cookieKey];
+    if (!cookie) throw new UnauthorizedException('Not authorized');
+    const [token, tokenId] = cookie.split(':');
+    return [token, tokenId];
+  }
+
+  private clearCookie(response: Response) {
+    response.clearCookie(config().session.cookieKey, {
+      httpOnly: true,
+      sameSite: 'strict',
+    });
+  }
+
+  private setSessionCookie(response: Response, token: string, tokenId: string) {
+    const cookieValue = `${token}:${tokenId}`;
+    response.cookie(config().session.cookieKey, cookieValue, {
+      httpOnly: true,
+      maxAge: config().session.maxAge,
+    });
+  }
+
   @Post('register')
-  async register(@Body() dto: RegisterUserDto, @Res({ passthrough: true }) res: Response) {
+  async register(
+    @Body() dto: RegisterUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.register(dto);
-    res.cookie('session_token', result.token, { httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 30
-     });
+
+    this.setSessionCookie(res, result.token, result.tokenId);
+
     return { message: 'Registration successful', user: result };
   }
 
   @Post('login')
-  async login(@Body() dto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() dto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.login(dto);
-    res.cookie('session_token', result.token, { 
-      httpOnly: true,
-       maxAge: 1000 * 60 * 60 * 24 * 30 
-      });
+
+    this.setSessionCookie(res, result.token, result.tokenId);
+
     return { message: 'Login successful', user: result };
   }
 
   @Post('logout')
-  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
-    console.log(req.cookies);
-    const token = req.cookies['session_token']; 
-    if (!token) throw new HttpException('Not authorized', 401);
-    res.clearCookie('session_token', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-    });
+  async logout(
+    @Req() req: RequestWithCookies,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [, tokenId] = this.checkCookie(req);
 
-  return await this.authService.logout(token);
-  
-}
+    this.clearCookie(res);
 
+    return await this.authService.logout(tokenId);
+  }
 
   @Get('me')
-  async profile(@Req() req,@Res({ passthrough: true }) res: Response ) {
-    const token = req.cookies['session_token'];
-    if (!token) throw new HttpException('Not authorized', 401);
-    res.cookie('session_token', token, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 30, 
-      secure: true,       
-      sameSite: 'strict', 
-    });
-    return await this.authService.profile(token);
+  async profile(@Req() req: RequestWithCookies) {
+    const [token, tokenId] = this.checkCookie(req);
+    return await this.authService.getUserByToken(tokenId, token); //auth guard
   }
 }
