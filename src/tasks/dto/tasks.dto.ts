@@ -1,15 +1,14 @@
-import { IsString, Max, IsDate, isNumber, IsOptional, MaxLength } from "class-validator";
+import { IsString, IsDate, IsOptional, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateTaskDto {
-
   @IsString({ message: 'Title must be a string' })
-  @MaxLength(100, { message: 'string can have max 100 characters'})
+  @MaxLength(100, { message: 'string can have max 100 characters' })
   title: string;
 
   @IsOptional()
   @IsString({ message: 'Description must be a string' })
-  @MaxLength(100, { message: 'Description can have max 500 characters'})
+  @MaxLength(100, { message: 'Description can have max 500 characters' })
   description?: string;
 
   @IsOptional()
@@ -19,7 +18,6 @@ export class CreateTaskDto {
 }
 
 export class UpdateTaskDto {
-
   @IsOptional()
   @IsString({ message: 'Title must be a string' })
   @MaxLength(100, { message: 'Title can have max 100 characters' })
@@ -36,6 +34,6 @@ export class UpdateTaskDto {
   dueDate?: Date;
 
   @IsOptional()
-  @IsString({message: 'must be done or pending'})
-  status?: 'pending' | 'done'
+  @IsString({ message: 'must be done or pending' })
+  status?: 'pending' | 'done';
 }

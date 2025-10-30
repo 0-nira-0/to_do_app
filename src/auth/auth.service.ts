@@ -97,7 +97,7 @@ export class AuthService {
       where: { id: session.userId },
     });
     if (!user) {
-      return null;
+      return undefined;
     }
     return {
       user: { email: user.email, createdAt: user.createdAt, id: user.id },

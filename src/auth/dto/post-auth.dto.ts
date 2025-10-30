@@ -1,31 +1,23 @@
 import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
-import { User } from 'generated/prisma';
 
 export class RegisterUserDto {
-  @MaxLength(64, { message: 'max 64 symbols' })
-  @IsEmail({}, { message: 'btw, invalid email' })
+  @MaxLength(64)
+  @IsEmail({})
   email: string;
 
-  @MaxLength(64, { message: 'max 67 symbols' })
-  @IsString({ message: 'passwrod must be a string' })
-  @MinLength(6, { message: 'min 6 symdobls' })
+  @MaxLength(64)
+  @IsString()
+  @MinLength(6) //castom class-validator
   password: string;
-
 }
 
 export class LoginUserDto {
-  @MaxLength(64, { message: 'max 64 symbols' })
-  @IsEmail({}, { message: 'btw, invalid email' })
+  @MaxLength(64)
+  @IsEmail({})
   email: string;
 
-  @MaxLength(64, { message: 'max 67 symbols' })
-  @IsString({ message: 'passwrod must be a string' })
-  @MinLength(6, { message: 'min 6 symdobls' })
+  @MaxLength(64)
+  @IsString()
+  @MinLength(6)
   password: string;
 }
-
-export class TokenDto {
-  @IsString({ message: 'token must be a string' })
-  token: string;
-}
-

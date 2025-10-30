@@ -13,25 +13,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
   tasks     Task[]
-  sessions   Session[]
+  sessions  Session[]
 }
 
 model Task {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
   dueDate     DateTime?
-  status      Status   @default(pending)
+  status      Status    @default(pending)
   userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
 }
 
 enum Status {
@@ -39,13 +40,13 @@ enum Status {
   done
 }
 
-
 model Session {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  tokenHash String   @unique
+  tokenId   String   @unique 
+  expiresAt DateTime 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

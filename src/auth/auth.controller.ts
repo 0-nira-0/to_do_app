@@ -10,7 +10,9 @@ import { LoginUserDto, RegisterUserDto } from './dto/post-auth.dto';
 import type { Response, Request } from 'express';
 import { Res, Req } from '@nestjs/common';
 import { config } from 'src/config';
-
+import type { RequestWithUser } from 'src/config';
+import { AuthGuard } from './auth.guard';
+import { UseGuards } from '@nestjs/common';
 interface RequestWithCookies extends Request {
   cookies: Record<string, string>;
 }
@@ -78,8 +80,8 @@ export class AuthController {
   }
 
   @Get('me')
-  async profile(@Req() req: RequestWithCookies) {
-    const [token, tokenId] = this.checkCookie(req);
-    return await this.authService.getUserByToken(tokenId, token); //auth guard
+  @UseGuards(AuthGuard)
+  profile(@Req() req: RequestWithUser) {
+    return req.user;
   }
 }

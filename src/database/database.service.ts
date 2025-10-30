@@ -1,9 +1,8 @@
-import { INestApplication, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class DatabaseService extends PrismaClient {
-  
   async onModuleInit() {
     await this.$connect();
   }
@@ -11,12 +10,4 @@ export class DatabaseService extends PrismaClient {
   async onModuleDestroy() {
     await this.$disconnect();
   }
-
-  async clearDatabase() {
-    await this.user.deleteMany(); 
-    await this.task.deleteMany();
-  }
-  
-
 }
-
