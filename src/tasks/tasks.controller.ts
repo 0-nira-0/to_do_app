@@ -3,44 +3,34 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
-  Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { TasksService } from './tasks.service';
-import { CreateTaskDto, UpdateTaskDto } from './dto/tasks.dto';
+import { UpdateTaskDto } from './dto/update-tasks.dto';
+import { CreateTaskDto } from './dto/create-tasks.dto';
 import { GetTasksDto } from './dto/get-tasks.dto';
-import { SessionService } from '../session/session.service';
-import { AuthService } from 'src/auth/auth.service';
+
 import { AuthGuard } from 'src/auth/auth.guard';
-import type { RequestWithUser } from 'src/config';
+
+import { CurrentUser } from 'src/auth/decorators/user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class TasksController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly sessionService: SessionService,
-    private readonly tasksService: TasksService,
-  ) {}
-
-  private getUserId(req: RequestWithUser): number {
-    if (!req.user || !req.user.id) {
-      throw new NotFoundException('User not found');
-    }
-    return req.user.id;
-  }
+  constructor(private readonly tasksService: TasksService) {}
 
   @Post('tasks')
-  async createTask(@Body() dto: CreateTaskDto, @Req() req: RequestWithUser) {
-    const userId = this.getUserId(req);
+  async createTask(
+    @Body() dto: CreateTaskDto,
+    @CurrentUser('id') userId: User['id'],
+  ) {
     const task = await this.tasksService.createTask(dto, userId);
     return { task };
   }
@@ -49,37 +39,36 @@ export class TasksController {
   async updateTask(
     @Body() dto: UpdateTaskDto,
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: RequestWithUser,
+    @CurrentUser('id') userId: User['id'],
   ) {
-    const userId = this.getUserId(req);
-    return this.tasksService.updateTask(dto, id, userId);
+    const task = await this.tasksService.updateTask(dto, id, userId);
+    return { task };
   }
 
   @Delete('tasks/:id')
   async deleteTask(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: RequestWithUser,
+    @CurrentUser('id') userId: User['id'],
   ) {
-    this.getUserId(req);
-    return this.tasksService.deleteTask(id);
+    const task = await this.tasksService.deleteTask(id, userId);
+    return { task };
   }
 
   @Get('tasks/:id')
   async getTask(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: RequestWithUser,
+    @CurrentUser('id') userId: User['id'],
   ) {
-    const userId = this.getUserId(req);
-    return this.tasksService.getTask(id, userId);
+    const task = await this.tasksService.getTask(id, userId);
+    return { task };
   }
 
   @Get('tasks')
   async getTasks(
-    @Req() req: RequestWithUser,
-    @Res({ passthrough: true }) res: Response,
     @Query() dto: GetTasksDto,
+    @CurrentUser('id') userId: User['id'],
   ) {
-    const userId = this.getUserId(req);
-    return this.tasksService.getTasks({ ...dto, userId });
+    const tasks = await this.tasksService.getTasks({ ...dto, userId });
+    return { tasks };
   }
 }

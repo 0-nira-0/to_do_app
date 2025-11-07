@@ -1,4 +1,4 @@
-import { Status, Task } from '@prisma/client';
+import { Task } from '@prisma/client';
 import {
   IsBoolean,
   IsDate,
@@ -7,36 +7,45 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+enum Status {
+  pending = 'pending',
+  done = 'done',
+}
 
 export class GetTasksDto {
-  @IsNumber()
-  userId: number;
+  // @IsString()
+  // userId: User['id'];
 
   @IsOptional()
+  @Type(() => Date)
   @IsDate()
-  dueFrom: Date;
+  dueFrom?: Date;
 
   @IsOptional()
+  @Type(() => Date)
   @IsDate()
-  dueTo: Date;
+  dueTo?: Date;
 
   @IsOptional()
   @IsBoolean()
-  includeNoDue: boolean;
+  @Type(() => Boolean)
+  includeNoDue?: boolean;
 
   @IsOptional()
   @IsNumber()
-  limit: number;
+  limit?: number;
 
   @IsOptional()
   @IsNumber()
-  offset: number;
+  offset?: number;
 
   @IsOptional()
   @IsEnum(Status)
-  status: Task['status'];
+  status?: Task['status'];
 
   @IsOptional()
   @IsString()
-  query: string;
+  query?: string;
 }

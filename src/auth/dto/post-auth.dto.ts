@@ -7,7 +7,7 @@ export class RegisterUserDto {
 
   @MaxLength(64)
   @IsString()
-  @MinLength(6) //castom class-validator
+  @MinLength(6) //custom class-validator
   password: string;
 }
 

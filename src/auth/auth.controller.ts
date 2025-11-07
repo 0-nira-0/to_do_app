@@ -10,12 +10,10 @@ import { LoginUserDto, RegisterUserDto } from './dto/post-auth.dto';
 import type { Response, Request } from 'express';
 import { Res, Req } from '@nestjs/common';
 import { config } from 'src/config';
-import type { RequestWithUser } from 'src/config';
+import type { RequestWithUser } from 'src/interface';
 import { AuthGuard } from './auth.guard';
 import { UseGuards } from '@nestjs/common';
-interface RequestWithCookies extends Request {
-  cookies: Record<string, string>;
-}
+import type { RequestWithCookies } from 'src/interface';
 
 @Controller('auth')
 export class AuthController {
@@ -24,7 +22,9 @@ export class AuthController {
   private checkCookie(req: RequestWithCookies) {
     const cookie = req.cookies[config().session.cookieKey];
     if (!cookie) throw new UnauthorizedException('Not authorized');
+
     const [token, tokenId] = cookie.split(':');
+
     return [token, tokenId];
   }
 
@@ -74,9 +74,13 @@ export class AuthController {
   ) {
     const [, tokenId] = this.checkCookie(req);
 
+    await this.authService.logout(tokenId);
+
     this.clearCookie(res);
 
-    return await this.authService.logout(tokenId);
+    return {
+      message: '',
+    };
   }
 
   @Get('me')

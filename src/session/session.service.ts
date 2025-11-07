@@ -2,14 +2,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import * as bcrypt from 'bcrypt';
 import { config } from 'src/config';
+import type { CreateSessionOptions } from 'src/interface';
 
-type CreateSessionOptions = { userId: number; token: string; tokenId: string };
 @Injectable()
 export class SessionService {
   constructor(private readonly db: DatabaseService) {}
 
   async create({ token, userId, tokenId }: CreateSessionOptions) {
-    const tokenHash = await bcrypt.hash(token, 10);
+    const tokenHash = await bcrypt.hash(token, config().session.saltHash);
     return this.db.session.create({
       data: {
         tokenId,
@@ -24,27 +24,38 @@ export class SessionService {
     const session = await this.db.session.findUnique({
       where: { tokenId },
     });
-    if (!session) throw new UnauthorizedException('invalid token');
 
-    const tokenCheck = await bcrypt.compare(token, session.tokenHash);
+    if (!session) {
+      throw new UnauthorizedException('Invalid token');
+    }
 
-    if (!tokenCheck) throw new UnauthorizedException('Not authorized');
+    const isTokenValid = await bcrypt.compare(token, session.tokenHash);
+
+    if (!isTokenValid) {
+      throw new UnauthorizedException('Invalid token');
+    }
 
     if (session.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedException('invalid token'); //redirect to login
+      throw new UnauthorizedException('Session expired');
     }
-    const updatedSession = await this.db.session.update({
-      where: {
-        tokenId,
-      },
+
+    return this.db.session.update({
+      where: { tokenId },
       data: {
         expiresAt: new Date(Date.now() + config().session.maxAge),
       },
     });
-    return updatedSession;
   }
 
   async delete(tokenId: string) {
+    const session = await this.db.session.findUnique({
+      where: { tokenId },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid token 1111');
+    }
+
     return this.db.session.delete({ where: { tokenId } });
   }
 }
