@@ -60,6 +60,7 @@ export class TasksService {
       status,
     } = dto;
     const pagination = this.getPagination({ offset, limit });
+    console.log('includeNoDue:', includeNoDue, typeof includeNoDue);
     const where = {
       userId,
       AND: [
@@ -71,17 +72,17 @@ export class TasksService {
           ],
         },
         includeNoDue
-          ? {
-              OR: [
-                { dueDate: { equals: null } },
-                {
-                  dueDate: { gte: dueFrom, lte: dueTo }, // здесь если дата не указана, то ничего не сработает
-                },
-              ],
-            }
-          : {
-              dueDate: { gte: dueFrom, lte: dueTo }, //или здесь
-            },
+          ? dueFrom || dueTo
+            ? {
+                OR: [
+                  { dueDate: { equals: null } },
+                  { dueDate: { gte: dueFrom, lte: dueTo } },
+                ],
+              }
+            : { dueDate: { equals: null } }
+          : dueFrom || dueTo
+            ? { dueDate: { gte: dueFrom, lte: dueTo } }
+            : { dueDate: { not: null } },
       ],
     } satisfies Prisma.TaskWhereInput;
 
